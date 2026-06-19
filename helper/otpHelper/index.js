@@ -16,7 +16,7 @@ const sendOTPEmail = async (to, mailOptions) => {
     },
   });
 
-  console.lot("transport config cleared now sending");
+  console.log("transport config cleared now sending");
 
   await transporter.verify();
   console.log("SMTP Ready");
