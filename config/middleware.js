@@ -11,7 +11,7 @@ const initMiddleware = (app) => {
   // CORS
   app.use(
     cors({
-      origin: ["https://registrations.siratulmustaqeem.academy" , "https://siratulmustaqeem.academy" , "https://192.168.43.24:5175"],
+      origin: ["https://registrations.siratulmustaqeem.academy", "https://siratulmustaqeem.academy" , "https://192.168.43.24:5175"],
       credentials: true,
     })
   );
