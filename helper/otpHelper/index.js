@@ -1,20 +1,18 @@
 const nodemailer = require("nodemailer");
+require("dotenv")
 
 const sendOTPEmail = async (to, mailOptions) => {
   console.log("sending email");
 
-  const transporter = nodemailer.createTransport({
-    host: "74.125.136.108", // smtp.gmail.com ka IPv4 test
-    port: 587,
-    secure: false,
-    auth: {
-      user: "smacademy74@gmail.com",
-      pass: "dlpe okze cvub ctbu",
-    },
-    tls: {
-      servername: "smtp.gmail.com",
-    },
-  });
+const transporter = nodemailer.createTransport({
+  host: process.env.BREVO_SMTP_HOST,
+  port: Number(process.env.BREVO_SMTP_PORT),
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
   console.log("transport config cleared now sending");
 
