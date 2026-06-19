@@ -2,12 +2,12 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const sequelize = new Sequelize(
-    process.env.MYSQL_DATABASE || 'physical_registrations',
-    process.env.MYSQL_USER || 'root',
-    process.env.MYSQL_PASSWORD || '',
+    process.env.MYSQL_DATABASE || 'registrations-353035311130',
+    process.env.MYSQL_USER || 'Manager-99bf',
+    process.env.MYSQL_PASSWORD || 'Farhan33..',
     
     {
-        host: process.env.MYSQL_HOST || 'localhost',
+        host: process.env.MYSQL_HOST || 'mysql.gb.stackcp.com',
          port: process.env.MYSQL_PORT,
         dialect: 'mysql',
         logging: false,

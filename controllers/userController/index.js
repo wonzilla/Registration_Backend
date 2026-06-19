@@ -109,14 +109,14 @@ adminLogin = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
        maxAge: 2 * 60 * 60 * 1000, // 2 hours
-      sameSite: "lax",
+      sameSite: "none",
     });
     
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: "none",
     });
     
     return sendResponse(req, res, {
@@ -195,14 +195,14 @@ verifyOTP = async (req, res) => {
     res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 10 * 60 * 1000, // 10 minutes
-      sameSite: "lax",
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      sameSite: "none",
     });
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: "none",
     });
 
     return sendResponse(req, res, {
