@@ -8,10 +8,40 @@ const models = require("./models");
 const initModules = require("./config/modules");
 const initRoutes = require("./config/routes");
 const initMiddleware = require("./config/middleware");
+const sendOtpEmail = require("./helper/otpHelper");
 
 initMiddleware(app);
 
 const modules = initModules(models);
+
+
+
+
+app.get("/test-email", async (req, res) => {
+  try {
+    await sendOtpEmail("tahqeeq86@gmail.com", {
+      subject: "🎉 Welcome to Sirat Ul Mustaqeem Academy",
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h1>Welcome 👋</h1>
+          <p>Your account has been successfully created.</p>
+          <p>We are glad to have you with us.</p>
+        </div>
+      `,
+    });
+
+    res.json({
+      success: true,
+      message: "Test email sent successfully 🚀",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Email failed",
+    });
+  }
+});
 
 initRoutes(app, modules, models);
 
@@ -20,7 +50,7 @@ const initializeDatabaseAndCronJobs = async () => {
     await sequelize.authenticate();
     console.log("✅ Database Connection established.");
 
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
     // await sequelize.sync();
     console.log("✅ All models synchronized successfully.");
     databaseInitialized = true;
