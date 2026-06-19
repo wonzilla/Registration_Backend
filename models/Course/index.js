@@ -23,7 +23,7 @@ const Course = sequelize.define('Course', {
   icon: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: '📚',
+    defaultValue: '',
   },
   duration: {
     type: DataTypes.STRING,
