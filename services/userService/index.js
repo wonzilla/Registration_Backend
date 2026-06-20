@@ -346,6 +346,7 @@ class UserService {
 
 
 
+
   async googleAuth(userData) {
     const { name, phone, email, images, isAdmin } = userData;
     
@@ -367,24 +368,20 @@ class UserService {
         auth_provider: "google",
       });
 
-      const token = jwt.sign(
-        { email: newUser.email, id: newUser.id },
-        process.env.JWT_SECRET || process.env.JSON_WEB_TOKEN_SECRET_KEY
-      );
+       const accessToken = generateAccessToken(newUser);
+    const refreshToken = generateRefreshToken(newUser);
 
-      return { user: newUser, token, msg: "User registered and logged in with Google successfully!" };
+      return { user: newUser, accessToken, refreshToken,  msg: "User registered and logged in with Google successfully!" };
     }
 
     if (existingUser.auth_provider === 'local') {
       throw new Error('This email is already registered. Please sign in using your email and password.');
     }
 
-    const token = jwt.sign(
-      { email: existingUser.email, id: existingUser.id },
-      process.env.JWT_SECRET || process.env.JSON_WEB_TOKEN_SECRET_KEY
-    );
+   const accessToken = generateAccessToken(existingUser);
+    const refreshToken = generateRefreshToken(existingUser);
 
-    return { user: existingUser, token, msg: "User logged in with Google successfully!" };
+    return { user: existingUser, accessToken, refreshToken, msg: "User logged in with Google successfully!" };
   }
 
 

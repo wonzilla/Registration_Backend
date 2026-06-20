@@ -143,6 +143,21 @@ adminLogin = async (req, res) => {
   authWithGoogle = async (req, res) => {
     try {
       const result = await this.userService.googleAuth(req.body);
+
+       // Set cookies
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+     maxAge: 2 * 60 * 60 * 1000, // 2 hours
+      sameSite: "none",
+    });
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "none",
+    });
+
       return sendResponse(req, res, {
         statusCode: 200,
         success: true,
@@ -150,7 +165,8 @@ adminLogin = async (req, res) => {
         message: result.msg,
         data: {
           user: result.user,
-          token: result.token
+          accessToken : result.accessToken ,
+          refreshToken : result.refreshToken 
         }
       });
     } catch (error) {
