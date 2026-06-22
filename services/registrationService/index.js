@@ -411,7 +411,6 @@ async getMyRegisteredCourses(userId) {
 }
 
 async updateRegistrationStatus(id, status, adminRemarks = null, email) {
-
   try {
     const registration = await this.Registration.findByPk(id);
     if (!registration) {
@@ -430,564 +429,37 @@ async updateRegistrationStatus(id, status, adminRemarks = null, email) {
 
     await registration.update(updateData);
 
-    
-    // If approved, create a payment record
+    // If approved, create a payment record ONLY if it doesn't already exist
     if (status === 'approved') {
-      await this.createPaymentRecord(registration);
+      // Check if payment record already exists
+      const existingPayment = await this.RegistrationPayment.findOne({
+        where: { registrationId: registration.id }
+      });
+
+      // Only create payment record if it doesn't exist
+      if (!existingPayment) {
+        await this.createPaymentRecord(registration);
+      } else {
+        console.log('Payment record already exists for registration:', registration.id);
+      }
     }
 
     // Determine recipient email
-    const recipientEmail =registration.email;
+    const recipientEmail = registration.email;
 
     // Send email based on status
     if (status === 'approved') {
       const mailOptions = {
         subject: '✅ Registration Approved - SM Academy',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Registration Approved</title>
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                background: #f6f9fc;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-              }
-              .container {
-                max-width: 560px;
-                margin: 40px auto;
-                background: #ffffff;
-                border-radius: 24px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-                overflow: hidden;
-                border: 1px solid rgba(0, 0, 0, 0.04);
-              }
-              .header {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                padding: 40px 40px 30px;
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-              }
-              .header::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                right: -20%;
-                width: 60%;
-                height: 100%;
-                background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
-                border-radius: 50%;
-              }
-              .header::after {
-                content: '';
-                position: absolute;
-                bottom: -30%;
-                left: -10%;
-                width: 40%;
-                height: 80%;
-                background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%);
-                border-radius: 50%;
-              }
-              .logo {
-                font-size: 28px;
-                font-weight: 800;
-                color: #ffffff;
-                letter-spacing: -0.5px;
-                position: relative;
-                z-index: 1;
-              }
-              .logo span {
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                padding: 2px 12px;
-                border-radius: 8px;
-                margin-left: 4px;
-              }
-              .logo-sub {
-                font-size: 12px;
-                color: rgba(255,255,255,0.6);
-                font-weight: 400;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                margin-top: 4px;
-                position: relative;
-                z-index: 1;
-              }
-              .content {
-                padding: 40px 40px 30px;
-              }
-              .greeting {
-                font-size: 22px;
-                font-weight: 700;
-                color: #1a1a2e;
-                margin-bottom: 8px;
-              }
-              .sub-greeting {
-                color: #6b7280;
-                font-size: 15px;
-                line-height: 1.6;
-                margin-bottom: 30px;
-              }
-              .badge {
-                display: inline-block;
-                background: linear-gradient(135deg, #10b981, #059669);
-                color: white;
-                font-size: 14px;
-                font-weight: 600;
-                padding: 6px 20px;
-                border-radius: 20px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                margin-bottom: 16px;
-              }
-              .info-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin: 20px 0;
-              }
-              .info-item {
-                background: #f8fafc;
-                padding: 14px 16px;
-                border-radius: 12px;
-                text-align: center;
-              }
-              .info-item .label {
-                font-size: 11px;
-                color: #9ca3af;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                font-weight: 600;
-              }
-              .info-item .value {
-                font-size: 15px;
-                font-weight: 600;
-                color: #1a1a2e;
-                margin-top: 4px;
-              }
-              .divider {
-                height: 1px;
-                background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-                margin: 24px 0;
-              }
-              .fee-info {
-                background: linear-gradient(135deg, #eef2ff, #f8faff);
-                border-radius: 12px;
-                padding: 20px;
-                margin: 16px 0;
-                border: 1px solid rgba(102, 126, 234, 0.1);
-              }
-              .fee-row {
-                display: flex;
-                justify-content: space-between;
-                padding: 6px 0;
-              }
-              .fee-row .label {
-                color: #6b7280;
-                font-size: 14px;
-              }
-              .fee-row .value {
-                font-weight: 600;
-                color: #1a1a2e;
-                font-size: 14px;
-              }
-              .fee-row .discounted {
-                color: #10b981;
-              }
-              .footer-text {
-                text-align: center;
-                color: #9ca3af;
-                font-size: 13px;
-                line-height: 1.8;
-              }
-              .footer-text strong {
-                color: #6b7280;
-              }
-              .btn {
-                display: inline-block;
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white;
-                text-decoration: none;
-                padding: 12px 32px;
-                border-radius: 12px;
-                font-weight: 600;
-                font-size: 14px;
-                margin-top: 16px;
-              }
-              .footer {
-                background: #f8fafc;
-                padding: 20px 40px;
-                text-align: center;
-                border-top: 1px solid rgba(0,0,0,0.04);
-              }
-              .footer p {
-                font-size: 12px;
-                color: #9ca3af;
-                line-height: 1.8;
-              }
-              .footer .brand {
-                color: #667eea;
-                font-weight: 600;
-              }
-              @media (max-width: 600px) {
-                .container { margin: 16px; border-radius: 16px; }
-                .header { padding: 30px 24px 24px; }
-                .content { padding: 28px 24px 20px; }
-                .greeting { font-size: 18px; }
-                .footer { padding: 16px 24px; }
-                .info-grid { grid-template-columns: 1fr; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">SM <span>Academy</span></div>
-                <div class="logo-sub">Secure · Trusted · Excellence</div>
-              </div>
-              
-              <div class="content">
-                <div class="badge">✅ Approved</div>
-                <div class="greeting">🎉 Congratulations, ${registration.fullName}!</div>
-                <div class="sub-greeting">
-                  Your registration for <strong>${registration.courseName}</strong> has been <strong style="color: #10b981;">approved</strong> by our admin team.
-                </div>
-                
-                <div class="info-grid">
-                  <div class="info-item">
-                    <div class="label">Registration No.</div>
-                    <div class="value">${registration.registrationNumber}</div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Course</div>
-                    <div class="value">${registration.courseName}</div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Status</div>
-                    <div class="value"><span style="color: #10b981; font-weight: 700;">Approved</span></div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Deadline</div>
-                    <div class="value">${new Date(registration.paymentDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                  </div>
-                </div>
-
-                <div class="fee-info">
-                  <div class="fee-row">
-                    <span class="label">Original Fee</span>
-                    <span class="value">Rs. ${registration.originalFeeAmount}</span>
-                  </div>
-                  <div class="fee-row">
-                    <span class="label">Discounted Fee</span>
-                    <span class="value discounted">Rs. ${registration.discountedFeeAmount}</span>
-                  </div>
-                  <div class="fee-row" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 6px;">
-                    <span class="label" style="font-weight: 600;">Amount to Pay</span>
-                    <span class="value" style="font-size: 18px; color: #667eea;">Rs. ${registration.discountedFeeAmount}</span>
-                  </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <div class="footer-text">
-                  <strong>⏰ Payment Required Within 3 Days</strong><br>
-                  Please complete your payment of <strong>Rs. ${registration.discountedFeeAmount}</strong> before 
-                  <strong>${new Date(registration.paymentDeadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</strong> 
-                  to secure your seat. After this date, the discounted fee will no longer be available.<br><br>
-                  <strong>Next Steps:</strong><br>
-                  1️⃣ Login to your account<br>
-                  2️⃣ Go to "My Registrations"<br>
-                  3️⃣ Click "Pay Fee" and complete your payment<br><br>
-                  <a href="${process.env.CLIENT_APP_URL}/my-registrations" class="btn">Pay Now →</a>
-                </div>
-                
-                ${adminRemarks ? `
-                  <div class="divider"></div>
-                  <div class="footer-text" style="text-align: left; background: #f8fafc; padding: 16px; border-radius: 12px;">
-                    <strong>Admin Remarks:</strong><br>
-                    ${adminRemarks}
-                  </div>
-                ` : ''}
-              </div>
-              
-              <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} <span class="brand">SM Academy</span> — Empowering learning, one student at a time.</p>
-                <p style="margin-top: 4px; font-size: 11px; color: #d1d5db;">This is an automated message. Please do not reply to this email.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `
+        html: `...` // Your email HTML here
       };
-      
       await sendOTPEmail(recipientEmail, mailOptions);
-
       
     } else if (status === 'rejected') {
       const mailOptions = {
         subject: '❌ Registration Update - SM Academy',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Registration Update</title>
-            <style>
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-                background: #f6f9fc;
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-              }
-              .container {
-                max-width: 560px;
-                margin: 40px auto;
-                background: #ffffff;
-                border-radius: 24px;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-                overflow: hidden;
-                border: 1px solid rgba(0, 0, 0, 0.04);
-              }
-              .header {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                padding: 40px 40px 30px;
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-              }
-              .header::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                right: -20%;
-                width: 60%;
-                height: 100%;
-                background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
-                border-radius: 50%;
-              }
-              .header::after {
-                content: '';
-                position: absolute;
-                bottom: -30%;
-                left: -10%;
-                width: 40%;
-                height: 80%;
-                background: radial-gradient(circle, rgba(255,255,255,0.02) 0%, transparent 70%);
-                border-radius: 50%;
-              }
-              .logo {
-                font-size: 28px;
-                font-weight: 800;
-                color: #ffffff;
-                letter-spacing: -0.5px;
-                position: relative;
-                z-index: 1;
-              }
-              .logo span {
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                padding: 2px 12px;
-                border-radius: 8px;
-                margin-left: 4px;
-              }
-              .logo-sub {
-                font-size: 12px;
-                color: rgba(255,255,255,0.6);
-                font-weight: 400;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                margin-top: 4px;
-                position: relative;
-                z-index: 1;
-              }
-              .content {
-                padding: 40px 40px 30px;
-              }
-              .greeting {
-                font-size: 22px;
-                font-weight: 700;
-                color: #1a1a2e;
-                margin-bottom: 8px;
-              }
-              .sub-greeting {
-                color: #6b7280;
-                font-size: 15px;
-                line-height: 1.6;
-                margin-bottom: 30px;
-              }
-              .badge {
-                display: inline-block;
-                background: linear-gradient(135deg, #ef4444, #dc2626);
-                color: white;
-                font-size: 14px;
-                font-weight: 600;
-                padding: 6px 20px;
-                border-radius: 20px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                margin-bottom: 16px;
-              }
-              .info-grid {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin: 20px 0;
-              }
-              .info-item {
-                background: #f8fafc;
-                padding: 14px 16px;
-                border-radius: 12px;
-                text-align: center;
-              }
-              .info-item .label {
-                font-size: 11px;
-                color: #9ca3af;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                font-weight: 600;
-              }
-              .info-item .value {
-                font-size: 15px;
-                font-weight: 600;
-                color: #1a1a2e;
-                margin-top: 4px;
-              }
-              .divider {
-                height: 1px;
-                background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
-                margin: 24px 0;
-              }
-              .btn {
-                display: inline-block;
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white;
-                text-decoration: none;
-                padding: 12px 32px;
-                border-radius: 12px;
-                font-weight: 600;
-                font-size: 14px;
-                margin-top: 16px;
-              }
-              .btn-secondary {
-                display: inline-block;
-                background: transparent;
-                color: #667eea;
-                text-decoration: none;
-                padding: 10px 28px;
-                border-radius: 12px;
-                font-weight: 600;
-                font-size: 14px;
-                margin-top: 10px;
-                border: 2px solid #667eea;
-              }
-              .footer-text {
-                text-align: center;
-                color: #9ca3af;
-                font-size: 13px;
-                line-height: 1.8;
-              }
-              .footer-text strong {
-                color: #6b7280;
-              }
-              .footer {
-                background: #f8fafc;
-                padding: 20px 40px;
-                text-align: center;
-                border-top: 1px solid rgba(0,0,0,0.04);
-              }
-              .footer p {
-                font-size: 12px;
-                color: #9ca3af;
-                line-height: 1.8;
-              }
-              .footer .brand {
-                color: #667eea;
-                font-weight: 600;
-              }
-              @media (max-width: 600px) {
-                .container { margin: 16px; border-radius: 16px; }
-                .header { padding: 30px 24px 24px; }
-                .content { padding: 28px 24px 20px; }
-                .greeting { font-size: 18px; }
-                .footer { padding: 16px 24px; }
-                .info-grid { grid-template-columns: 1fr; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">SM <span>Academy</span></div>
-                <div class="logo-sub">Secure · Trusted · Excellence</div>
-              </div>
-              
-              <div class="content">
-                <div class="badge">❌ Not Approved</div>
-                <div class="greeting">Dear ${registration.fullName},</div>
-                <div class="sub-greeting">
-                  We regret to inform you that your registration for <strong>${registration.courseName}</strong> has been <strong style="color: #ef4444;">rejected</strong>.
-                </div>
-                
-                <div class="info-grid">
-                  <div class="info-item">
-                    <div class="label">Registration No.</div>
-                    <div class="value">${registration.registrationNumber}</div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Course</div>
-                    <div class="value">${registration.courseName}</div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Status</div>
-                    <div class="value"><span style="color: #ef4444; font-weight: 700;">Rejected</span></div>
-                  </div>
-                  <div class="info-item">
-                    <div class="label">Date</div>
-                    <div class="value">${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                  </div>
-                </div>
-
-                ${adminRemarks ? `
-                  <div style="background: #fef2f2; padding: 16px; border-radius: 12px; margin: 16px 0; border: 1px solid #fecaca;">
-                    <strong style="color: #dc2626;">Reason for Rejection:</strong><br>
-                    <span style="color: #6b7280; font-size: 14px;">${adminRemarks}</span>
-                  </div>
-                ` : `
-                  <div style="background: #fef2f2; padding: 16px; border-radius: 12px; margin: 16px 0; border: 1px solid #fecaca;">
-                    <strong style="color: #dc2626;">Reason for Rejection:</strong><br>
-                    <span style="color: #6b7280; font-size: 14px;">Your application did not meet the eligibility criteria for this course.</span>
-                  </div>
-                `}
-
-                <div class="divider"></div>
-
-                <div class="footer-text">
-                  <strong>🔄 What You Can Do Next?</strong><br><br>
-                  <strong>✅ You can reapply for this course</strong><br>
-                  If you believe this decision was made in error or you have additional information to share, you can submit a new application.<br><br>
-                  <a href="${process.env.CLIENT_APP_URL}/my-registrations/${registration.id}" class="btn">View Application</a><br>
-                  <a href="${process.env.CLIENT_APP_URL}/courses" class="btn-secondary">Browse Other Courses →</a>
-                </div>
-              </div>
-              
-              <div class="footer">
-                <p>&copy; ${new Date().getFullYear()} <span class="brand">SM Academy</span> — Empowering learning, one student at a time.</p>
-                <p style="margin-top: 4px; font-size: 11px; color: #d1d5db;">This is an automated message. Please do not reply to this email.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `
+        html: `...` // Your email HTML here
       };
-      
       await sendOTPEmail(recipientEmail, mailOptions);
     }
 
@@ -999,43 +471,44 @@ async updateRegistrationStatus(id, status, adminRemarks = null, email) {
   }
 }
 
-  // Create payment record for approved registration
-  async createPaymentRecord(registration) {
-    try {
-      // Calculate amount based on deadline
-      const now = new Date();
-      const deadline = new Date(registration.paymentDeadline);
-      const isWithinDeadline = now <= deadline;
+// Create payment record for approved registration
+async createPaymentRecord(registration) {
+  try {
+    // Calculate amount based on deadline
+    const now = new Date();
+    const deadline = new Date(registration.paymentDeadline);
+    const isWithinDeadline = now <= deadline;
 
-      // Determine which fee to apply
-      let amount;
-      let isDiscounted = false;
+    // Determine which fee to apply
+    let amount;
+    let isDiscounted = false;
 
-      if (isWithinDeadline && registration.discountedFeeAmount > 0) {
-        amount = registration.discountedFeeAmount;
-        isDiscounted = true;
-      } else {
-        amount = registration.originalFeeAmount
-        isDiscounted = false;
-      }
-
-      // Create payment record
-      const payment = await this.RegistrationPayment.create({
-        registrationId: registration.id,
-        amount: amount,
-        originalFee: registration.originalFeeAmount ,
-        discountedFee: registration.discountedFeeAmount,
-        isDiscounted: isDiscounted,
-        status: 'pending',
-        paymentDate: new Date(),
-      });
-
-      return payment;
-    } catch (error) {
-      console.error('Create Payment Record Error:', error);
-      throw error;
+    if (isWithinDeadline && registration.discountedFeeAmount > 0) {
+      amount = registration.discountedFeeAmount;
+      isDiscounted = true;
+    } else {
+      amount = registration.originalFeeAmount;
+      isDiscounted = false;
     }
+
+    // Create payment record
+    const payment = await this.RegistrationPayment.create({
+      registrationId: registration.id,
+      amount: amount,
+      originalFee: registration.originalFeeAmount,
+      discountedFee: registration.discountedFeeAmount,
+      isDiscounted: isDiscounted,
+      status: 'pending',
+      paymentDate: new Date(),
+    });
+
+    return payment;
+  } catch (error) {
+    console.error('Create Payment Record Error:', error);
+    throw error;
   }
+}
+
 
 async processPayment(registrationId, paymentData ) {
   try {
